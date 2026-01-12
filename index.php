@@ -93,12 +93,15 @@ if (file_exists($velocityFile)) {
     }));
 
     // Déterminer le niveau de vélocité
-    if ($velocityCount >= 10) {
+    if ($velocityCount >= 100) {
         $velocityLevel = 'Très élevé';
         $velocityColor = '#e74c3c'; // Rouge
-    } elseif ($velocityCount >= 5) {
+    } elseif ($velocityCount >= 50) {
         $velocityLevel = 'Élevé';
         $velocityColor = '#f39c12'; // Orange
+    } elseif ($velocityCount >= 30) {
+        $velocityLevel = 'Moyen';
+        $velocityColor = '#3498db'; // Bleu
     } else {
         $velocityLevel = 'Faible';
         $velocityColor = '#27ae60'; // Vert
