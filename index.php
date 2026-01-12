@@ -76,13 +76,15 @@ $randomLink = rtrim($randomLink, '/\\') . "/random.php";
 
 $urls = getUrls();
 
-// --- CALCUL DE VÉLOCITÉ ---
+// --- CALCUL DE VÉLOCITÉ (uniquement avec 1 URL) ---
 $velocityFile = __DIR__ . '/velocity_log.json';
 $velocityCount = 0;
-$velocityLevel = 'Faible';
+$velocityLevel = '';
 $velocityColor = '#888';
+$velocityAction = '';
+$showVelocity = (count($urls) === 1); // Activer uniquement quand 1 seule URL
 
-if (file_exists($velocityFile)) {
+if ($showVelocity && file_exists($velocityFile)) {
     $velocityLog = json_decode(file_get_contents($velocityFile), true) ?: [];
     $now = time();
     $cutoff = $now - 20; // 20 dernières secondes
@@ -92,19 +94,23 @@ if (file_exists($velocityFile)) {
         return $t >= $cutoff;
     }));
 
-    // Déterminer le niveau de vélocité
+    // Déterminer le niveau de vélocité et l'action recommandée
     if ($velocityCount >= 100) {
         $velocityLevel = 'Très élevé';
         $velocityColor = '#e74c3c'; // Rouge
+        $velocityAction = 'NE PAS déclencher de campagne POP - Trafic cache suffisant';
     } elseif ($velocityCount >= 50) {
         $velocityLevel = 'Élevé';
         $velocityColor = '#f39c12'; // Orange
+        $velocityAction = 'NE PAS déclencher de campagne POP - Trafic cache correct';
     } elseif ($velocityCount >= 30) {
         $velocityLevel = 'Moyen';
         $velocityColor = '#3498db'; // Bleu
+        $velocityAction = 'Optionnel - Trafic cache modéré';
     } else {
         $velocityLevel = 'Faible';
         $velocityColor = '#27ae60'; // Vert
+        $velocityAction = 'DÉCLENCHER campagne POP recommandé';
     }
 }
 ?>
@@ -221,16 +227,24 @@ if (file_exists($velocityFile)) {
         <?php endforeach; ?>
     </table>
 
-    <!-- Affichage de la Vélocité -->
-    <div class="velocity-box" style="margin: 20px auto; padding: 15px; background: #f5f5f5; border: 2px solid <?php echo $velocityColor; ?>; border-radius: 8px; display: inline-block; min-width: 300px;">
-        <span style="font-size: 1.1em;">Vélocité de la campagne :</span>
-        <strong style="color: <?php echo $velocityColor; ?>; font-size: 1.3em; margin-left: 10px;">
+    <?php if ($showVelocity): ?>
+    <!-- Affichage de la Vélocité (1 seule URL = mesure du trafic cache) -->
+    <div class="velocity-box" style="margin: 20px auto; padding: 20px; background: linear-gradient(135deg, #f5f5f5, #fff); border: 3px solid <?php echo $velocityColor; ?>; border-radius: 10px; display: inline-block; min-width: 400px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="font-size: 0.9em; color: #888; margin-bottom: 10px;">
+            Mode mesure vélocité (1 URL restante)
+        </div>
+        <span style="font-size: 1.2em;">Vélocité du trafic cache :</span>
+        <strong style="color: <?php echo $velocityColor; ?>; font-size: 1.5em; margin-left: 10px;">
             <?php echo $velocityLevel; ?>
         </strong>
-        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
-            (<?php echo $velocityCount; ?> hit<?php echo $velocityCount > 1 ? 's' : ''; ?> dans les 20 dernières secondes)
+        <div style="font-size: 0.9em; color: #666; margin-top: 8px;">
+            <?php echo $velocityCount; ?> hit<?php echo $velocityCount > 1 ? 's' : ''; ?> / 20 secondes
+        </div>
+        <div style="margin-top: 15px; padding: 10px; background: <?php echo $velocityColor; ?>20; border-radius: 5px; font-weight: bold; color: <?php echo $velocityColor; ?>;">
+            <?php echo $velocityAction; ?>
         </div>
     </div>
+    <?php endif; ?>
     <?php endif; ?>
 
     <div class="footer">
