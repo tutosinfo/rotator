@@ -75,6 +75,38 @@ $randomLink = $protocol . "://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_
 $randomLink = rtrim($randomLink, '/\\') . "/random.php";
 
 $urls = getUrls();
+
+// --- CALCUL DE VÉLOCITÉ ---
+$velocityFile = __DIR__ . '/velocity_log.json';
+$velocityCount = 0;
+$velocityLevel = 'Faible';
+$velocityColor = '#888';
+
+if (file_exists($velocityFile)) {
+    $velocityLog = json_decode(file_get_contents($velocityFile), true) ?: [];
+    $now = time();
+    $cutoff = $now - 20; // 20 dernières secondes
+
+    // Compter les hits des 20 dernières secondes
+    $velocityCount = count(array_filter($velocityLog, function($t) use ($cutoff) {
+        return $t >= $cutoff;
+    }));
+
+    // Déterminer le niveau de vélocité
+    if ($velocityCount >= 100) {
+        $velocityLevel = 'Très élevé';
+        $velocityColor = '#e74c3c'; // Rouge
+    } elseif ($velocityCount >= 50) {
+        $velocityLevel = 'Élevé';
+        $velocityColor = '#f39c12'; // Orange
+    } elseif ($velocityCount >= 30) {
+        $velocityLevel = 'Moyen';
+        $velocityColor = '#3498db'; // Bleu
+    } else {
+        $velocityLevel = 'Faible';
+        $velocityColor = '#27ae60'; // Vert
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -188,6 +220,17 @@ $urls = getUrls();
         </tr>
         <?php endforeach; ?>
     </table>
+
+    <!-- Affichage de la Vélocité -->
+    <div class="velocity-box" style="margin: 20px auto; padding: 15px; background: #f5f5f5; border: 2px solid <?php echo $velocityColor; ?>; border-radius: 8px; display: inline-block; min-width: 300px;">
+        <span style="font-size: 1.1em;">Vélocité de la campagne :</span>
+        <strong style="color: <?php echo $velocityColor; ?>; font-size: 1.3em; margin-left: 10px;">
+            <?php echo $velocityLevel; ?>
+        </strong>
+        <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+            (<?php echo $velocityCount; ?> hit<?php echo $velocityCount > 1 ? 's' : ''; ?> dans les 20 dernières secondes)
+        </div>
+    </div>
     <?php endif; ?>
 
     <div class="footer">
